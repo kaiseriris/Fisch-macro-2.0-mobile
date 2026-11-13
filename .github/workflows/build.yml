@@ -1,3 +1,4 @@
+
 name: Build Fisch Macro APK
 
 on:
@@ -5,7 +6,6 @@ on:
   push:
     branches:
       - main
-      - master
 
 permissions:
   contents: read
@@ -15,35 +15,40 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Java 17
+      - name: Extract 2.0 source
+        run: |
+          mkdir -p project
+          unzip -q FischMobileMacro_Source.zip -d project
+          SETTINGS=$(find project -type f \( -name settings.gradle -o -name settings.gradle.kts \) -print -quit)
+          if [ -z "$SETTINGS" ]; then
+            echo "No Gradle project found in ZIP"
+            exit 1
+          fi
+          echo "PROJECT_DIR=$(dirname "$SETTINGS")" >> "$GITHUB_ENV"
+
+      - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.7'
-
-      - name: Find Android project
-        run: |
-          find . -name settings.gradle -o -name settings.gradle.kts
+          gradle-version: '8.9'
 
       - name: Build APK
-        run: |
-          PROJECT_DIR=$(dirname "$(find . -name settings.gradle -o -name settings.gradle.kts | head -n 1)")
-          if [ -z "$PROJECT_DIR" ] || [ "$PROJECT_DIR" = "." ]; then
-            PROJECT_DIR="."
-          fi
-          gradle -p "$PROJECT_DIR" --no-daemon assembleDebug
+        run: gradle -p "$PROJECT_DIR" --no-daemon assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: FischMacro-APK
-          path: '**/build/outputs/apk/debug/app-debug.apk'
+          name: FischMacro-2.0-APK
+          path: project/**/build/outputs/apk/debug/*.apk
           if-no-files-found: error
