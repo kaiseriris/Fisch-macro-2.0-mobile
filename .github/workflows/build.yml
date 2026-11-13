@@ -1,3 +1,4 @@
+
 name: Build Fisch Macro APK
 
 on:
@@ -22,13 +23,16 @@ jobs:
         run: |
           mkdir -p project
           unzip -q FischMobileMacro_Source.zip -d project
+
           SETTINGS=$(find project -type f \( -name settings.gradle -o -name settings.gradle.kts \) -print -quit)
+
           if [ -z "$SETTINGS" ]; then
             echo "No Gradle project found in ZIP"
             echo "Extracted project tree:"
             find project -maxdepth 4 -print | head -200
             exit 1
           fi
+
           echo "PROJECT_DIR=$(dirname "$SETTINGS")" >> "$GITHUB_ENV"
 
       - name: Set up Java
@@ -38,13 +42,15 @@ jobs:
           java-version: '17'
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          packages: |
-            cmdline-tools;latest
-            platform-tools
-            platforms;android-34
-            build-tools;34.0.0
+        uses: android-actions/setup-android@v4
+
+      - name: Install Android SDK packages
+        shell: bash
+        run: |
+          sdkmanager --install \
+            "platform-tools" \
+            "platforms;android-34" \
+            "build-tools;34.0.0"
 
       - name: Accept Android SDK licenses
         shell: bash
@@ -60,9 +66,12 @@ jobs:
         shell: bash
         run: |
           if [ -x "$PROJECT_DIR/gradlew" ]; then
-            bash "$PROJECT_DIR/gradlew" -p "$PROJECT_DIR" --no-daemon assembleDebug
+            bash "$PROJECT_DIR/gradlew" \
+              -p "$PROJECT_DIR" \
+              --no-daemon assembleDebug
           else
-            gradle -p "$PROJECT_DIR" --no-daemon assembleDebug
+            gradle -p "$PROJECT_DIR" \
+              --no-daemon assembleDebug
           fi
 
       - name: Upload APK
