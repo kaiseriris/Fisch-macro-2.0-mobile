@@ -1,40 +1,5 @@
 
-name: Build Fisch Macro APK
-
-on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
-
-permissions:
-  contents: read
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Extract 2.0 source
-        shell: bash
-        run: |
-          mkdir -p project
-          unzip -q FischMobileMacro_Source.zip -d project
-
-          SETTINGS=$(find project -type f \( -name settings.gradle -o -name settings.gradle.kts \) -print -quit)
-
-          if [ -z "$SETTINGS" ]; then
-            echo "No Gradle project found in ZIP"
-            echo "Extracted project tree:"
-            find project -maxdepth 4 -print | head -200
-            exit 1
-          fi
-
-          echo "PROJECT_DIR=$(dirname "$SETTINGS")" >> "$GITHUB_ENV"
-
+name: Build Fisch Macro 
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
